@@ -21,6 +21,8 @@ class TemperatureResponseSchema(TemperatureRequestSchema):
     @field_validator("date_time")
     @classmethod
     def validate_date_time(cls, value):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
         if value > datetime.now(timezone.utc):
             raise ValueError("date_time cannot be in the future")
         return value
@@ -30,7 +32,7 @@ class PaginatedTemperatureResponseSchema(BaseModel):
     temperatures: list[TemperatureResponseSchema]
     total_items: int
     total_pages: int
-    prev_page: int | None
-    next_page: int | None
+    prev_page: str | None = None
+    next_page: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

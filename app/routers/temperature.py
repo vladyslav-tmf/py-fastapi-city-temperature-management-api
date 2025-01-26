@@ -1,5 +1,5 @@
 import aiohttp
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.models.city import City
@@ -55,6 +55,7 @@ async def update_temperatures(db: Session = Depends(get_db)) -> dict[str, str]:
 
 @temperature_router.get("/", response_model=PaginatedTemperatureResponseSchema)
 def get_list_of_temperatures(
+    request: Request,
     city_id: int | None = None,
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
@@ -86,14 +87,20 @@ def get_list_of_temperatures(
             detail="No temperatures found",
         )
 
+    base_url = str(request.base_url) + "temperatures/"
+
     return PaginatedTemperatureResponseSchema(
         temperatures=[
             TemperatureResponseSchema.model_validate(temp) for temp in temperatures
         ],
         total_items=total_items,
         total_pages=total_pages,
-        prev_page=f"?page={page - 1}&per_page={per_page}" if page > 1 else None,
+        prev_page=(
+            f"{base_url}?page={page - 1}&per_page={per_page}" if page > 1 else None
+        ),
         next_page=(
-            f"?page={page + 1}&per_page={per_page}" if page < total_pages else None
+            f"{base_url}?page={page + 1}&per_page={per_page}"
+            if page < total_pages
+            else None
         ),
     )

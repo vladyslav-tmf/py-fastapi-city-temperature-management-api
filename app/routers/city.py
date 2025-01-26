@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.models.city import City
@@ -36,6 +36,7 @@ def create_city(
 
 @city_router.get("/", response_model=PaginatedCityResponseSchema)
 def get_list_of_cities(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -53,13 +54,19 @@ def get_list_of_cities(
     total_items = db.query(City).count()
     total_pages = (total_items + per_page - 1) // per_page
 
+    base_url = str(request.base_url) + "cities/"
+
     return PaginatedCityResponseSchema(
         cities=city_list,
         total_items=total_items,
         total_pages=total_pages,
-        prev_page=f"?page={page - 1}&per_page={per_page}" if page > 1 else None,
+        prev_page=(
+            f"{base_url}?page={page - 1}&per_page={per_page}" if page > 1 else None
+        ),
         next_page=(
-            f"?page={page + 1}&per_page={per_page}" if page < total_pages else None
+            f"{base_url}?page={page + 1}&per_page={per_page}"
+            if page < total_pages
+            else None
         ),
     )
 
@@ -98,7 +105,7 @@ def update_city(
 
 
 @city_router.delete("/{city_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_city(city_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
+def delete_city(city_id: int, db: Session = Depends(get_db)) -> None:
     city = db.query(City).filter_by(id=city_id).first()
 
     if not city:
@@ -109,4 +116,3 @@ def delete_city(city_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
 
     db.delete(city)
     db.commit()
-    return {"detail": f"City with id {city_id} deleted"}

@@ -24,7 +24,7 @@ class PaginatedCityResponseSchema(BaseModel):
     cities: list[CityResponseSchema]
     total_items: int
     total_pages: int
-    prev_page: int | None
-    next_page: int | None
+    prev_page: str | None = None
+    next_page: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
