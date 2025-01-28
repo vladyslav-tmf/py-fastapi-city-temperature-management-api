@@ -10,11 +10,12 @@ from app.schemas.temperature import (
     TemperatureResponseSchema,
 )
 from app.services.weather import get_current_temperatures
+from services.weather import WeatherAPIError
 
-temperature_router = APIRouter(prefix="/temperatures", tags=["temperatures"])
+router = APIRouter(prefix="/temperatures", tags=["temperatures"])
 
 
-@temperature_router.post("/update", status_code=status.HTTP_201_CREATED)
+@router.post("/update", status_code=status.HTTP_201_CREATED)
 async def update_temperatures(db: Session = Depends(get_db)) -> dict[str, str]:
     cities = db.query(City).all()
 
@@ -27,7 +28,18 @@ async def update_temperatures(db: Session = Depends(get_db)) -> dict[str, str]:
     city_names = [city.name for city in cities]
 
     async with aiohttp.ClientSession() as session:
-        temperatures = await get_current_temperatures(city_names, session)
+        try:
+            temperatures = await get_current_temperatures(city_names, session)
+
+            if not temperatures:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to fetch temperature data for any city",
+                )
+        except WeatherAPIError as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)
+            )
 
     new_records = []
 
@@ -53,7 +65,7 @@ async def update_temperatures(db: Session = Depends(get_db)) -> dict[str, str]:
     }
 
 
-@temperature_router.get("/", response_model=PaginatedTemperatureResponseSchema)
+@router.get("/", response_model=PaginatedTemperatureResponseSchema)
 def get_list_of_temperatures(
     request: Request,
     city_id: int | None = None,

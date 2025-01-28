@@ -10,10 +10,10 @@ from app.schemas.city import (
     PaginatedCityResponseSchema,
 )
 
-city_router = APIRouter(prefix="/cities", tags=["cities"])
+router = APIRouter(prefix="/cities", tags=["cities"])
 
 
-@city_router.post(
+@router.post(
     "/", response_model=CityResponseSchema, status_code=status.HTTP_201_CREATED
 )
 def create_city(
@@ -34,7 +34,7 @@ def create_city(
     return CityResponseSchema.model_validate(new_city)
 
 
-@city_router.get("/", response_model=PaginatedCityResponseSchema)
+@router.get("/", response_model=PaginatedCityResponseSchema)
 def get_list_of_cities(
     request: Request,
     page: int = Query(1, ge=1),
@@ -71,7 +71,7 @@ def get_list_of_cities(
     )
 
 
-@city_router.get("/{city_id}", response_model=CityResponseSchema)
+@router.get("/{city_id}", response_model=CityResponseSchema)
 def get_single_city(city_id: int, db: Session = Depends(get_db)) -> CityResponseSchema:
     city = db.query(City).filter_by(id=city_id).first()
 
@@ -84,7 +84,7 @@ def get_single_city(city_id: int, db: Session = Depends(get_db)) -> CityResponse
     return CityResponseSchema.model_validate(city)
 
 
-@city_router.put("/{city_id}", response_model=CityResponseSchema)
+@router.put("/{city_id}", response_model=CityResponseSchema)
 def update_city(
     city_id: int, city_data: CityUpdateSchema, db: Session = Depends(get_db)
 ) -> CityResponseSchema:
@@ -104,7 +104,7 @@ def update_city(
     return CityResponseSchema.model_validate(city)
 
 
-@city_router.delete("/{city_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{city_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_city(city_id: int, db: Session = Depends(get_db)) -> None:
     city = db.query(City).filter_by(id=city_id).first()
 

@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from database.session import init_db
-from routers.city import city_router
-from routers.temperature import temperature_router
+from routers.city import router as city_router
+from routers.temperature import router as temperature_router
 
 
 @asynccontextmanager
